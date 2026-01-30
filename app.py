@@ -18,7 +18,7 @@ st.set_page_config(
 # --------------------------------------------------
 # Load data
 # --------------------------------------------------
-@st.cache_data
+
 def load_data():
     movies = pd.read_csv("data/movies.csv")
     ratings = pd.read_csv("data/ratings.csv")
