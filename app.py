@@ -5,7 +5,6 @@ import joblib
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 import re
-from pathlib import Path
 
 # --------------------------------------------------
 # Page config
@@ -17,17 +16,12 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# Base paths (CLOUD SAFE)
-# --------------------------------------------------
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
-
-# --------------------------------------------------
 # Load data
 # --------------------------------------------------
+
 def load_data():
-    movies = pd.read_csv(DATA_DIR / "movies.csv")
-    ratings = pd.read_csv(DATA_DIR / "ratings.csv")
+    movies = pd.read_csv("data/movies.csv")
+    ratings = pd.read_csv("data/ratings.csv")
     return movies, ratings
 
 movies, ratings = load_data()
@@ -37,7 +31,7 @@ movies, ratings = load_data()
 # --------------------------------------------------
 @st.cache_resource
 def load_xgb():
-    return joblib.load(BASE_DIR / "xgb_hybrid_model.pkl")
+    return joblib.load("xgb_hybrid_model.pkl")
 
 xgb_model = load_xgb()
 
@@ -70,13 +64,9 @@ cosine_sim, indices = build_content_model(movies)
 # Feature functions
 # --------------------------------------------------
 def user_based_score(movie_idx, liked_indices):
-    if not liked_indices:
-        return 0
     return np.max(cosine_sim[liked_indices, movie_idx])
 
 def item_based_score(movie_idx, liked_indices):
-    if not liked_indices:
-        return 0
     return np.max(cosine_sim[movie_idx, liked_indices])
 
 def popularity_score(movie_id):
@@ -152,7 +142,7 @@ with tab1:
             st.divider()
 
 # --------------------------------------------------
-# TAB 2: Popularity-based
+# TAB 2: Popularity-based (WITH GENRE + SORT OPTION)
 # --------------------------------------------------
 with tab2:
     st.subheader("🔥 Popular Movies")
@@ -161,11 +151,15 @@ with tab2:
         "**Most Rated** or **Newly Released**."
     )
 
+    # ---- Extract all genres ----
     all_genres = sorted(
         set(g for sub in movies["genres"].dropna().str.split("|") for g in sub)
     )
 
-    selected_genres = st.multiselect("🎭 Select genres (1–3 recommended)", all_genres)
+    selected_genres = st.multiselect(
+        "🎭 Select genres (1–3 recommended)",
+        all_genres
+    )
 
     sort_option = st.radio(
         "📊 Rank movies by",
@@ -173,6 +167,7 @@ with tab2:
         horizontal=True
     )
 
+    # ---- Filter by genre ----
     filtered_movies = movies.copy()
 
     if selected_genres:
@@ -182,6 +177,7 @@ with tab2:
             )
         ]
 
+    # ---- Popularity (rating count) ----
     rating_counts = ratings.groupby("movieId")["rating"].count()
 
     filtered_movies = filtered_movies.merge(
@@ -190,17 +186,24 @@ with tab2:
 
     filtered_movies["rating_count"] = filtered_movies["rating_count"].fillna(0)
 
+    # ---- Extract year from title ----
     filtered_movies["year"] = (
         filtered_movies["title"]
         .str.extract(r"\((\d{4})\)")
         .astype(float)
     )
 
+    # ---- Sorting ----
     if sort_option == "Most Rated":
-        filtered_movies = filtered_movies.sort_values("rating_count", ascending=False)
-    else:
-        filtered_movies = filtered_movies.sort_values("year", ascending=False)
+        filtered_movies = filtered_movies.sort_values(
+            "rating_count", ascending=False
+        )
+    else:  # Newly Released
+        filtered_movies = filtered_movies.sort_values(
+            "year", ascending=False
+        )
 
+    # ---- Display ----
     top_movies = filtered_movies.head(num_recs)
 
     if top_movies.empty:
@@ -208,21 +211,34 @@ with tab2:
     else:
         for _, row in top_movies.iterrows():
             title = row["title"]
+            year = int(row["year"]) if not np.isnan(row["year"]) else ""
+
             st.markdown(f"**🔥 {title}**")
             st.caption(row["genres"])
 
             if show_trailer:
                 st.markdown(
                     f"[▶️ Watch trailer](https://www.youtube.com/results?search_query={title.replace(' ', '+')}+official+trailer)"
+
                 )
+
             st.divider()
+
+
 
 # --------------------------------------------------
 # TAB 3: Hybrid XGBoost
 # --------------------------------------------------
 with tab3:
     st.subheader("🤖 Hybrid Recommendations (XGBoost)")
-    st.caption("Select **3–5 favorite movies**.")
+    st.caption(
+        "Select **3–5 favorite movies**. "
+        "The model ranks unseen movies using similarity and popularity."
+    )
+    st.info("⚠️ This XGBoost hybrid recommender is **experimental**. "
+            "It is currently being improved with better feature engineering "
+            "and ranking-based learning for more stable recommendations."
+    )        
 
     liked_movies = st.multiselect(
         "Select up to 5 movies you like",
@@ -260,8 +276,7 @@ with tab3:
                 ["user_based_score", "item_based_score", "popularity_score"]
             ]
 
-            pred = xgb_model.predict(X)
-            feature_df["score"] = pred[:, 1] if pred.ndim > 1 else pred
+            feature_df["score"] = xgb_model.predict_proba(X)[:, 1]
 
             top = (
                 feature_df.sort_values("score", ascending=False)
@@ -273,10 +288,25 @@ with tab3:
                 title = row["title"]
                 st.markdown(f"**🤖 {title}**")
                 st.caption(row["genres"])
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("👍", key=f"like_{i}"):
+                        st.success("Thank you for your participation!")
+
+                with col2:
+                    if st.button("👎", key=f"dislike_{i}"):
+                        st.success("Thank you for your participation!")
+
+                if show_trailer:
+                    st.markdown(
+                        f"[▶️ Watch trailer](https://www.youtube.com/results?search_query={title.replace(' ', '+')}+official+trailer)"
+                    )
+
                 st.divider()
 
 # --------------------------------------------------
-# Footer
+# Footer (NAME ADDED)
 # --------------------------------------------------
 st.markdown(
     """
