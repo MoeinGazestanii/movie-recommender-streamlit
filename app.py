@@ -123,11 +123,11 @@ with tab1:
     st.caption("Select **one movie** you like. Recommendations are based on **genre similarity**.")
 
     movie_title = st.selectbox("Choose a movie", sorted(movies["title"].unique()))
-    if cosine_sim is None:
-        cosine_sim, indices = build_content_model(movies)
 
 
     if st.button("Recommend similar movies"):
+        if cosine_sim is None:
+            cosine_sim, indices = build_content_model(movies)
         idx = indices[movie_title]
         scores = list(enumerate(cosine_sim[idx]))
         scores = sorted(scores, key=lambda x: x[1], reverse=True)
@@ -252,11 +252,12 @@ with tab3:
         sorted(movies["title"].unique()),
         max_selections=5
     )
-    if cosine_sim is None:
-        cosine_sim, indices = build_content_model(movies)
+    
 
 
     if st.button("Get XGBoost recommendations"):
+        if cosine_sim is None:
+            cosine_sim, indices = build_content_model(movies)
         if not liked_movies:
             st.warning("Please select at least one movie.")
         else:
