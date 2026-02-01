@@ -46,3 +46,23 @@ Item-based similarity
 Popularity score
 
 Interactive 👍 / 👎 feedback buttons
+
+## 🛠️ Tools
+
+Python
+
+Streamlit
+
+Pandas / NumPy
+
+Scikit-learn
+
+XGBoost
+
+### ⚠️ Notes
+
+The hybrid recommendation tab is under active improvement and should be interpreted as a prototype rather than a production-ready system. The application was optimized to work reliably on Streamlit Cloud, with careful handling of caching and file paths.
+
+
+---
+**Author:** Moein Gazestani
