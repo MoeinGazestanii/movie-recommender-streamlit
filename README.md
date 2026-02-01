@@ -2,20 +2,20 @@
 
 This project is an interactive Movie Recommender System built with Streamlit, combining:
 
-## 🎞 Content-based filtering (genre similarity)
+### 🎞 Content-based filtering (genre similarity)
 
-## 🔥 Popularity-based recommendations
+### 🔥 Popularity-based recommendations
 
-## 🤖 Hybrid XGBoost model (experimental)
+### 🤖 Hybrid XGBoost model (experimental)
 
 #### The app allows users to explore movies, get recommendations, and interact with different recommendation strategies.
 
-# 🚀 Live Demo
+## 🚀 Live Demo
 Streamlit App:
 ### https://movie-recommender-app-moein-gazestani.streamlit.app/
 
-# 🧩 Features
-## 🎞 Similar Movies
+## 🧩 Features
+### 🎞 Similar Movies
 
 Select a movie you like
 
@@ -23,7 +23,7 @@ Get recommendations based on genre similarity
 
 Optional YouTube trailer links
 
-## 🔥 Popular Movies
+### 🔥 Popular Movies
 
 Filter by genre
 
@@ -33,7 +33,7 @@ Most Rated
 
 Newly Released
 
-## 🤖 Hybrid Recommendations (XGBoost)
+### 🤖 Hybrid Recommendations (XGBoost)
 
 Select 3–5 favorite movies
 
